@@ -5,7 +5,7 @@ CFLAGS=-Wall -O0 -g $(INCLUDE_DIRS)
 
 LDFLAGS=-lglfw -lGL -ldl
 
-SRC_FILES=main.c external/glad/src/glad.c
+SRC_FILES=main.c external/glad/src/glad.c shader_loader.c
 
 TARGET_NAME=triangle.out
 
