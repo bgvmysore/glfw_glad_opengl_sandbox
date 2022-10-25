@@ -1,8 +1,11 @@
 // Fragment Shader
+#version 300 es
+
 precision mediump float;
 
-in vec3 attCol;
+in vec3 color;
+layout(location = 0) out vec4 fragcolor;
 
 void main() {
-	gl_FragColor = vec4(attCol, 1.0f);
+	fragcolor = vec4(color, 1.0f);
 }
