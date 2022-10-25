@@ -5,7 +5,8 @@
 
 #include "shader_loader.h"
 
-#define NUM_VERTICES 3
+#define NUM_VERTICES 4
+#define NUM_INDICES  6
 
 struct vertex {
 	/* Positions */
@@ -16,9 +17,15 @@ struct vertex {
 };
 
 const struct vertex triangle_vert_data[NUM_VERTICES] = {
-	{.x = -0.5, .y = -0.5, .z = 0, .r = 1.0, .g = 0.0, .b = 0.0},
-	{.x =  0.5, .y = -0.5, .z = 0, .r = 0.0, .g = 1.0, .b = 0.0},
-	{.x =  0.0, .y =  0.5, .z = 0, .r = 0.0, .g = 0.0, .b = 1.0}
+	{.x = -0.5, .y = -0.5, .z = 0, .r = 1.0, .g = 0.0, .b = 0.0}, // 0 Q-III
+	{.x =  0.5, .y = -0.5, .z = 0, .r = 0.0, .g = 1.0, .b = 0.0}, // 1 Q-IV
+	{.x =  0.5, .y =  0.5, .z = 0, .r = 0.0, .g = 0.0, .b = 1.0}, // 2 Q-I
+	{.x = -0.5, .y =  0.5, .z = 0, .r = 0.8, .g = 0.1, .b = 0.8}  // 3 Q-II
+};
+
+const GLubyte index_data[NUM_INDICES] = {
+	0, 1, 2,
+	2, 3, 0
 };
 
 char vertx_shader_buff[1024] = {0};
@@ -31,7 +38,7 @@ int main(void) {
 	if (!glfwInit()) return -1;
 
 	/* Create a Glfw Window */
-	window = glfwCreateWindow(640, 480, "Triangle", NULL, NULL);
+	window = glfwCreateWindow(600, 600, "Triangle", NULL, NULL);
 	if (!window) {
 		glfwTerminate();
 		return -1;
@@ -46,7 +53,7 @@ int main(void) {
 		return -1;
 	}
 
-	GLuint vert_arr_id, vert_buff_id;
+	GLuint vert_arr_id, vert_buff_id, element_buff_id;
 
 	glGenVertexArrays(1, &vert_arr_id);    // Generate one Vertex array and assign its id to 'vert_arr_id'
 	glBindVertexArray(vert_arr_id);        // Bind the vertex array given by 'vert_arr_id'
@@ -68,6 +75,13 @@ int main(void) {
 
 	glBindVertexArray(0);                 // Unbind Vertex array
 
+
+	glGenBuffers(1, &element_buff_id); // Generate a buffer id
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buff_id); // Bind that buffer given 'by element_buff_id' as element buffer
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLubyte) * NUM_INDICES, index_data, GL_STATIC_DRAW); // Assign indices data to element buffer
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // Unbind elements buffer
+
 	// Load shaders on to thier char buffer
 	read_shader_code(vertx_shader_buff, "shaders/vertex.glsl");
 	read_shader_code(fragt_shader_buff, "shaders/fragment.glsl");
@@ -83,7 +97,9 @@ int main(void) {
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glBindVertexArray(vert_arr_id); // Bind the required Vertex Array
-		glDrawArrays(GL_TRIANGLES, 0, 3); // Draw triangle primitive form bounded vertex array
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buff_id); // Bind the required elements or indices array buffer
+
+		glDrawElements(GL_TRIANGLES, NUM_INDICES, GL_UNSIGNED_BYTE, 0); // Using glDrawElements instead glDrawArrays
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
