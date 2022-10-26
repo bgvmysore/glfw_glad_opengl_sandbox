@@ -45,7 +45,7 @@ GLuint compile_shader(GLenum type, const char* shdr_src) {
 
 	/* Error Handling */
 	GLint is_compiled = GL_FALSE;
-	glGetShaderiv(shader_id, GL_COMPILE_STATUS, &is_compiled); // Get compile status in 'is_compiled' 
+	glGetShaderiv(shader_id, GL_COMPILE_STATUS, &is_compiled); // Get compile status in 'is_compiled'
 	if ((GLboolean)is_compiled == GL_FALSE) {
 
 		GLint msg_len = 0;
