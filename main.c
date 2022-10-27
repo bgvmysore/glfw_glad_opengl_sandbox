@@ -3,6 +3,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 #include "shader_loader.h"
 
 #define NUM_VERTICES 4
@@ -10,17 +13,20 @@
 
 struct vertex {
 	/* Positions */
-	GLfloat x,y,z;
+	GLfloat x, y, z;
 
 	/* Color */
-	GLfloat r,g,b;
+	GLfloat r, g, b;
+
+	/* Texture */
+	GLfloat u, v;
 };
 
 const struct vertex triangle_vert_data[NUM_VERTICES] = {
-	{.x = -0.5, .y = -0.5, .z = 0, .r = 0.01, .g = 0.34, .b = 0.56}, // 0 Q-III
-	{.x =  0.5, .y = -0.5, .z = 0, .r = 0.38, .g = 0.70, .b = 0.50}, // 1 Q-IV
-	{.x =  0.5, .y =  0.5, .z = 0, .r = 0.77, .g = 0.80, .b = 0.42}, // 2 Q-I
-	{.x = -0.5, .y =  0.5, .z = 0, .r = 0.87, .g = 0.25, .b = 0.35}  // 3 Q-II
+	{.x = -0.5, .y = -0.5, .z = 0, .r = 0.01, .g = 0.34, .b = 0.56, .u = 0.0, .v = 0.0}, // 0 Q-III
+	{.x =  0.5, .y = -0.5, .z = 0, .r = 0.38, .g = 0.70, .b = 0.50, .u = 1.0, .v = 0.0}, // 1 Q-IV
+	{.x =  0.5, .y =  0.5, .z = 0, .r = 0.77, .g = 0.80, .b = 0.42, .u = 1.0, .v = 1.0}, // 2 Q-I
+	{.x = -0.5, .y =  0.5, .z = 0, .r = 0.87, .g = 0.25, .b = 0.35, .u = 0.0, .v = 1.0}  // 3 Q-II
 };
 
 const GLubyte index_data[NUM_INDICES] = {
@@ -68,11 +74,13 @@ int main(void) {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(struct vertex) * NUM_VERTICES, triangle_vert_data, GL_STATIC_DRAW);
 
 	// Describe Vertex Attrib Pointer or vertex layout
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*) offsetof(struct vertex, x)); // index 0 - position
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*) offsetof(struct vertex, r)); // index 1 - colors
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(struct vertex), (void*) offsetof(struct vertex, x)); // index 0 - position
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(struct vertex), (void*) offsetof(struct vertex, r)); // index 1 - colors
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(struct vertex), (void*) offsetof(struct vertex, u)); // index 2 - texture
 
 	glEnableVertexAttribArray(0); // Enable index 0 or position Attrib Pntr
 	glEnableVertexAttribArray(1); // Enable index 1 or Color Attrib Pntr
+	glEnableVertexAttribArray(2); // Enable index 2 or Texture Attrib Pntr
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // Unbind Vertex Buffer
 
@@ -85,6 +93,36 @@ int main(void) {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLubyte) * NUM_INDICES, index_data, GL_STATIC_DRAW); // Assign indices data to element buffer
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // Unbind elements buffer Note: Bind this required Elements Array while drawing draw elements
+
+	/* Textures */
+	GLuint texture_id;
+	stbi_uc* tex_image_buffer = NULL;
+	int tex_image_width, tex_image_height, tex_image_nchanels;
+
+	stbi_set_flip_vertically_on_load(1); // Flip image vertically as png image requires this
+
+	// Load Image and get an handle to it
+	tex_image_buffer = stbi_load("resources/textures/apple_sprite_640px.png", &tex_image_width, &tex_image_height, &tex_image_nchanels, 4);
+	if (tex_image_buffer == NULL) {
+		fprintf(stderr, "Failed to load texture image file\n");
+	}
+
+	glGenTextures(1, &texture_id); // Generate 1 texter buffer and store its id in 'texture_id'
+	glBindTexture(GL_TEXTURE_2D, texture_id); // Bind the given texture
+
+	// Set Texture Buffer Parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // Min and Mag filter to Nearest Approximation interpolation
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // Clamp texture in x axis
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Clamp texture in y axis
+
+	// Set texture image buffer on GPU and load pixel data
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, tex_image_width, tex_image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_image_buffer);
+
+	glBindTexture(GL_TEXTURE_2D, 0); // Unbind texture
+
+	stbi_image_free(tex_image_buffer); // Free the image buffer as it is already in GPU
+
 
 	/* GL Shaders*/
 	/* Load shader sources on to thier respective char buffers from file path specified */
@@ -99,10 +137,19 @@ int main(void) {
 
 	/* Main Program Loop */
 	while(!glfwWindowShouldClose(window)) {
+		glClearColor(0.3f, 0.33f, 0.37f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glBindVertexArray(vert_arr_id); // Bind the required Vertex Array
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buff_id); // Bind the required elements or indices array buffer
+
+		// Bind Texture
+		glActiveTexture(GL_TEXTURE0); // Bind required texture slot
+		glBindTexture(GL_TEXTURE_2D, texture_id); // Bind texture given by id
+
+		// Get loaction of the sampler slot and give it slot info
+		// in our case we have GL_TEXTURE0 so we give that uniform a value of 0
+		glUniform1i(glGetUniformLocation(shader_program_id, "tex_sampler_slot"), 0);
 
 		glDrawElements(GL_TRIANGLES, NUM_INDICES, GL_UNSIGNED_BYTE, 0); // Using glDrawElements instead glDrawArrays
 
