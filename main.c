@@ -6,6 +6,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include <cglm/cglm.h>
+
 #include "shader_loader.h"
 
 #define NUM_VERTICES 4

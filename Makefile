@@ -1,9 +1,10 @@
 CC=gcc
 
-INCLUDE_DIRS=-Iexternal/glad/include -Iexternal/stb
+INCLUDE_DIRS=-Iexternal/glad/include -Iexternal/stb -Iexternal/cglm/include
 CFLAGS=-Wall -O0 -g $(INCLUDE_DIRS)
 
-LDFLAGS=-lglfw -lGL -ldl -lm
+LD_DIRS= -Llibs/DEP_CGLM
+LDFLAGS=-lglfw -lGL -ldl -lm $(LD_DIRS) -lcglm
 
 SRC_FILES=main.c external/glad/src/glad.c shader_loader.c
 
