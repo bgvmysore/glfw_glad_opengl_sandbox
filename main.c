@@ -100,9 +100,16 @@ int main(void) {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // Unbind elements buffer Note: Bind this required Elements Array while drawing draw elements
 
 	/* Textures */
-	GLuint tex_mcface_id;
+	GLuint tex_mcface_id, tex_apple_id, tex_eye_id;
 	GLint tex_parameters[9] = TEX2D_DEFAULT_CONFIG;
+
 	tex_mcface_id = tex2d_load_from_image("resources/textures/mc_face_640px.png", tex_parameters, 1);
+	tex2d_unbind();
+
+	tex_apple_id = tex2d_load_from_image("resources/textures/apple_sprite_640px.png", tex_parameters, 1);
+	tex2d_unbind();
+
+	tex_eye_id = tex2d_load_from_image("resources/textures/eye_640px.png", tex_parameters, 1);
 	tex2d_unbind();
 
 	/* GL Shaders*/
@@ -144,12 +151,15 @@ int main(void) {
 	// Bind Texture
 	// Note: Texture should be bound only after binding the shader program
 	tex2d_bind(tex_mcface_id, GL_TEXTURE0);
+	tex2d_bind(tex_apple_id, GL_TEXTURE1);
+	tex2d_bind(tex_eye_id, GL_TEXTURE2);
 
 	/* Main Program Loop */
 	double mouse_x, mouse_y;
 	float trans_vec2[2] = {0};
 	float time_0 = glfwGetTime(), time_1;
 	float fps_frams = 0;
+	short tex_sampler_slot = 0;
 	while(!glfwWindowShouldClose(window)) {
 
 		glClearColor(0.3f, 0.33f, 0.37f, 1.0f);
@@ -158,8 +168,8 @@ int main(void) {
 		glBindVertexArray(vert_arr_id); // Bind the required Vertex Array
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buff_id); // Bind the required elements or indices array buffer
 
-		// Give texture slot info, in our case we have GL_TEXTURE0 so we give that uniform a value of 0
-		glUniform1i(loc_tex_sampler_slot, 0);
+		// Give texture slot info
+		glUniform1i(loc_tex_sampler_slot, tex_sampler_slot);
 
 		// Set value for camera matrix uniform
 		glUniformMatrix4fv(loc_view_mat, 1, GL_FALSE, (GLfloat*)camera_mat);
@@ -178,6 +188,8 @@ int main(void) {
 			time_0 = time_1;
 
 			printf("Mouse Norm: ( %f , %f ) \n", trans_vec2[0], trans_vec2[1]);
+			tex_sampler_slot++;
+			if (tex_sampler_slot >= 3) tex_sampler_slot = 0;
 		}
 
 		/* Object Track Mouse */
@@ -199,6 +211,8 @@ int main(void) {
 	/* Clean Up */
 	glDeleteProgram(shader_program_id); // Delete Shader Program
 	tex2d_cleanup(&tex_mcface_id);      // Delete texture
+	tex2d_cleanup(&tex_apple_id);
+	tex2d_cleanup(&tex_eye_id);
 	glfwDestroyWindow(window);          // Destroy window object
 
 	glfwTerminate(); // Terminate GLFW

@@ -1,7 +1,7 @@
 CC=gcc
 
 INCLUDE_DIRS=-Iexternal/glad/include -Iexternal/stb -Iexternal/cglm/include
-CFLAGS=-Wall -O0 -g $(INCLUDE_DIRS)
+CFLAGS=-Wall -std=gnu11 -O0 -g $(INCLUDE_DIRS)
 
 LD_DIRS= -Llibs/DEP_CGLM
 LDFLAGS=-lglfw -lGL -ldl -lm $(LD_DIRS) -lcglm
