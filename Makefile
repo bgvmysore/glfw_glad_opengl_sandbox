@@ -6,7 +6,7 @@ CFLAGS=-Wall -O0 -g $(INCLUDE_DIRS)
 LD_DIRS= -Llibs/DEP_CGLM
 LDFLAGS=-lglfw -lGL -ldl -lm $(LD_DIRS) -lcglm
 
-SRC_FILES=main.c external/glad/src/glad.c shader_loader.c
+SRC_FILES=main.c external/glad/src/glad.c shader_loader.c texture_loader.c
 
 TARGET_NAME=triangle.out
 
