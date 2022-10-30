@@ -3,8 +3,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+#include "texture_loader.h"
 
 #include "shader_loader.h"
 
@@ -95,34 +94,10 @@ int main(void) {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // Unbind elements buffer Note: Bind this required Elements Array while drawing draw elements
 
 	/* Textures */
-	GLuint texture_id;
-	stbi_uc* tex_image_buffer = NULL;
-	int tex_image_width, tex_image_height, tex_image_nchanels;
-
-	stbi_set_flip_vertically_on_load(1); // Flip image vertically as png image requires this
-
-	// Load Image and get an handle to it
-	tex_image_buffer = stbi_load("resources/textures/apple_sprite_640px.png", &tex_image_width, &tex_image_height, &tex_image_nchanels, 4);
-	if (tex_image_buffer == NULL) {
-		fprintf(stderr, "Failed to load texture image file\n");
-	}
-
-	glGenTextures(1, &texture_id); // Generate 1 texter buffer and store its id in 'texture_id'
-	glBindTexture(GL_TEXTURE_2D, texture_id); // Bind the given texture
-
-	// Set Texture Buffer Parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // Min and Mag filter to Nearest Approximation interpolation
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // Clamp texture in x axis
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Clamp texture in y axis
-
-	// Set texture image buffer on GPU and load pixel data
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, tex_image_width, tex_image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_image_buffer);
-
-	glBindTexture(GL_TEXTURE_2D, 0); // Unbind texture
-
-	stbi_image_free(tex_image_buffer); // Free the image buffer as it is already in GPU
-
+	GLuint tex_mcface_id;
+	GLint tex_parameters[9] = TEX2D_DEFAULT_CONFIG;
+	tex_mcface_id = tex2d_load_from_image("resources/textures/mc_face_640px.png", tex_parameters, 1);
+	tex2d_unbind();
 
 	/* GL Shaders*/
 	/* Load shader sources on to thier respective char buffers from file path specified */
@@ -135,6 +110,10 @@ int main(void) {
 
 	glUseProgram(shader_program_id); // Use the specified shader program using its id
 
+	// Bind Texture
+	// Note: Texture should be bound only after binding the shader program
+	tex2d_bind(tex_mcface_id, GL_TEXTURE0);
+
 	/* Main Program Loop */
 	while(!glfwWindowShouldClose(window)) {
 		glClearColor(0.3f, 0.33f, 0.37f, 1.0f);
@@ -142,10 +121,6 @@ int main(void) {
 
 		glBindVertexArray(vert_arr_id); // Bind the required Vertex Array
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buff_id); // Bind the required elements or indices array buffer
-
-		// Bind Texture
-		glActiveTexture(GL_TEXTURE0); // Bind required texture slot
-		glBindTexture(GL_TEXTURE_2D, texture_id); // Bind texture given by id
 
 		// Get loaction of the sampler slot and give it slot info
 		// in our case we have GL_TEXTURE0 so we give that uniform a value of 0
@@ -159,7 +134,8 @@ int main(void) {
 
 	/* Clean Up */
 	glDeleteProgram(shader_program_id); // Delete Shader Program
-	glfwDestroyWindow(window); // Destroy window object
+	tex2d_cleanup(&tex_mcface_id);      // Delete texture
+	glfwDestroyWindow(window);          // Destroy window object
 
 	glfwTerminate(); // Terminate GLFW
 
