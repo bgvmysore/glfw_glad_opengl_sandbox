@@ -9,11 +9,11 @@
 #include "vertices.h"
 
 
-#define WINDOW_WIDTH  640
+#define WINDOW_WIDTH  720
 #define WINDOW_HEIGHT 480
 
-#define NUM_VERTICES 4
-#define NUM_INDICES  6
+#define NUM_VERTICES 8
+#define NUM_INDICES  36
 #define NUM_VERT_ATTRIB 3
 
 
@@ -32,22 +32,36 @@ struct vertex {
 	GLfloat u, v;
 };
 
-const struct vertex vert_data[NUM_VERTICES] = {
-	{.x = -0.5, .y = -0.5, .z = 0, .r = 0.01, .g = 0.34, .b = 0.56, .u = 0.0, .v = 0.0}, // 0 Q-III
-	{.x =  0.5, .y = -0.5, .z = 0, .r = 0.38, .g = 0.70, .b = 0.50, .u = 1.0, .v = 0.0}, // 1 Q-IV
-	{.x =  0.5, .y =  0.5, .z = 0, .r = 0.77, .g = 0.80, .b = 0.42, .u = 1.0, .v = 1.0}, // 2 Q-I
-	{.x = -0.5, .y =  0.5, .z = 0, .r = 0.87, .g = 0.25, .b = 0.35, .u = 0.0, .v = 1.0}  // 3 Q-II
-};
-
 const vertex_layout_element_t vert_layout[NUM_VERT_ATTRIB] = {
 	{GL_FLOAT, 3},
 	{GL_FLOAT, 3},
 	{GL_FLOAT, 2}
 };
 
+const struct vertex vert_data[NUM_VERTICES] = {
+{ -0.500000f,  0.500000f,  0.500000f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+{ -0.500000f, -0.500000f,  0.500000f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f },
+{ -0.500000f,  0.500000f, -0.500000f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f },
+{ -0.500000f, -0.500000f, -0.500000f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f },
+{  0.500000f,  0.500000f,  0.500000f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f },
+{  0.500000f, -0.500000f,  0.500000f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f },
+{  0.500000f,  0.500000f, -0.500000f, 0.7f, 0.7f, 0.7f, 0.0f, 0.0f },
+{  0.500000f, -0.500000f, -0.500000f, 0.2f, 0.2f, 0.2f, 0.0f, 0.0f }
+};
+
 const GLuint index_data[NUM_INDICES] = {
-	0, 1, 2,
-	2, 3, 0
+	4, 2, 0,
+	2, 7, 3,
+	6, 5, 7,
+	1, 7, 5,
+	0, 3, 1,
+	4, 1, 5,
+	4, 6, 2,
+	2, 6, 7,
+	6, 4, 5,
+	1, 3, 7,
+	0, 2, 3,
+	4, 0, 1
 };
 
 char vertx_shader_buff[1024] = {0};
@@ -83,8 +97,8 @@ int main(void) {
 	/* Vertex Buffer, Vertex Array and Elements Buffer */
 	GLuint vert_arr_id, vert_buff_id, element_buff_id;
 	vert_buff_id = vertices_vbo_create((const GLfloat*)vert_data, NUM_VERTICES * sizeof(struct vertex), GL_STATIC_DRAW);
-	vert_arr_id = vertices_vao_create(vert_buff_id, vert_layout, NUM_VERT_ATTRIB);
 	element_buff_id = vertices_ebo_create(index_data, NUM_INDICES, GL_STATIC_DRAW);
+	vert_arr_id = vertices_vao_create(vert_buff_id, element_buff_id, vert_layout, NUM_VERT_ATTRIB);
 
 
 	/* Textures */
@@ -114,14 +128,12 @@ int main(void) {
 	/* Creating Projection Matrix Ortho (2D) */
 	mat4 projection_mat = GLM_MAT4_IDENTITY_INIT;
 	GLfloat window_aspect_ratio = (GLfloat) WINDOW_WIDTH/ (GLfloat) WINDOW_HEIGHT;
-	glm_ortho(-1 * window_aspect_ratio, window_aspect_ratio, -1, 1, -1, 1, projection_mat);
-
-	// Setting Uniform, Note this should be done after binding shader program
+	glm_perspective(GLM_2_PIf/2, window_aspect_ratio, 0.2f, 25.0f, projection_mat);
 	glUniformMatrix4fv(loc_proj_mat, 1, GL_FALSE, (GLfloat*)projection_mat);
 
 	/* Creating View or Camera Matrix */
 	mat4 camera_mat = GLM_MAT4_IDENTITY_INIT;
-	glm_translate(camera_mat, (vec3){0.125f, 0.3f, 0.0f});
+	glm_look((vec3){0.0f, 0.0f, 10.0f}, (vec3){0.0f, 0.0f, -1.0f},(vec3){0.0f, 1.0f, 0.0f}, camera_mat);
 	glUniformMatrix4fv(loc_view_mat, 1, GL_FALSE, (GLfloat*)camera_mat);
 
 	/* Creating Model Matrix */
@@ -143,10 +155,9 @@ int main(void) {
 	while(!glfwWindowShouldClose(window)) {
 
 		glClearColor(0.3f, 0.33f, 0.37f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		vertices_vao_bind(vert_arr_id); // Bind the required Vertex Array
-		vertices_ebo_bind(element_buff_id); // Bind the required elements or indices array buffer
 
 		// Give texture slot info
 		glUniform1i(loc_tex_sampler_slot, tex_sampler_slot);
@@ -182,9 +193,34 @@ int main(void) {
 
 			trans_vec2[0] = 2.0f * mouse_x / (float) WINDOW_WIDTH -  1.0f;
 			trans_vec2[1] = -2.0f * mouse_y / (float) WINDOW_HEIGHT + 1.0f;
+		}
 
-			glm_mat4_copy(GLM_MAT4_IDENTITY, camera_mat);
-			glm_translate(camera_mat, (vec3){trans_vec2[0], trans_vec2[1], 0.0f});
+		glm_rotate(model_mat, 0.04f, (vec3){0.0f, 1.0f, 0.0f});
+		glUniformMatrix4fv(loc_mod_mat, 1, GL_FALSE, (GLfloat*)model_mat);
+
+		if(glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+			glm_translate(camera_mat, (vec3){0.0f, 0.0f, 0.2f});
+			glUniformMatrix4fv(loc_view_mat, 1, GL_FALSE, (GLfloat*)camera_mat);
+		}
+		if(glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+			glm_translate(camera_mat, (vec3){0.0f, 0.0f, -0.2f});
+			glUniformMatrix4fv(loc_view_mat, 1, GL_FALSE, (GLfloat*)camera_mat);
+		}
+		if(glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+			glm_translate(camera_mat, (vec3){-0.1f, 0.0f, 0.0f});
+			glUniformMatrix4fv(loc_view_mat, 1, GL_FALSE, (GLfloat*)camera_mat);
+		}
+		if(glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+			glm_translate(camera_mat, (vec3){0.1f, 0.0f, 0.0f});
+			glUniformMatrix4fv(loc_view_mat, 1, GL_FALSE, (GLfloat*)camera_mat);
+		}
+		if(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+			glm_translate(camera_mat, (vec3){0.0f, +0.1f, 0.0f});
+			glUniformMatrix4fv(loc_view_mat, 1, GL_FALSE, (GLfloat*)camera_mat);
+		}
+		if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+			glm_translate(camera_mat, (vec3){0.0f, -0.1f, 0.0f});
+			glUniformMatrix4fv(loc_view_mat, 1, GL_FALSE, (GLfloat*)camera_mat);
 		}
 	}
 
@@ -212,9 +248,13 @@ int main(void) {
 static void basic_gl_init_configs(void) {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 }
 
 
 static void basic_gl_release_configs(void) {
 	glDisable(GL_BLEND);
+	glDisable(GL_CULL_FACE);
 }

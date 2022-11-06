@@ -15,5 +15,5 @@ void main() {
 	 				  tex_data.g + ((1.0f - tex_data.a) * vert_color.g),
 	 				  tex_data.b + ((1.0f - tex_data.a) * vert_color.b),
 					  1.0f); */
-	frag_color = tex_data;
+	frag_color = vec4(vert_color, 1.0f);
 }
