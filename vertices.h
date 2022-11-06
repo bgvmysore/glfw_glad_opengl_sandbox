@@ -31,12 +31,12 @@ void vertices_vbo_cleanup(GLuint vertex_buffer_id);
 
 /*
 Creates a Vertex array object and returns its id.
-VAO takes primarily two things VBO and Layout of vertices in that VBO.
-VBO id is given as first argument
+VAO takes primarily three things VBO, EBO and Layout of vertices in that VBO.
+VBO, EBO id are given as first & second argument
 vertex_layout_element_t consists of two values GL value enum and no of such elements.
 An array of such vertex_layout_elements and num of elements is given to this function.
 */
-GLuint vertices_vao_create(GLuint vbo_id, const vertex_layout_element_t* vertex_buffer_layout, size_t num_elements_layout);
+GLuint vertices_vao_create(GLuint vbo_id, GLuint ebo_id, const vertex_layout_element_t* vertex_buffer_layout, size_t num_elements_layout);
 
 /* Bind VAO of given id */
 void vertices_vao_bind(GLuint vertex_array_id);

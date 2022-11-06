@@ -105,7 +105,7 @@ size_t vertices_helper_get_sizeof_type(GLenum type) {
 /* Vertex Array Object */
 
 
-GLuint vertices_vao_create(GLuint vbo_id, const vertex_layout_element_t* vertex_buffer_layout, size_t num_elements_layout) {
+GLuint vertices_vao_create(GLuint vbo_id, GLuint ebo_id, const vertex_layout_element_t* vertex_buffer_layout, size_t num_elements_layout) {
     GLuint vertex_array_id = 0;
     glGenVertexArrays(1, &vertex_array_id); // Generate one Vertex array and assign its id to 'vertex_array_id'
     if (vertex_array_id == 0) {
@@ -113,13 +113,21 @@ GLuint vertices_vao_create(GLuint vbo_id, const vertex_layout_element_t* vertex_
     }
 
     vertices_vao_bind(vertex_array_id); // Binding VAO first
-    vertices_vbo_bind(vbo_id); // Next Binding required VBO
 
+    vertices_vbo_bind(vbo_id); // Next Binding required VBO
     // Bind the layout
     vertices_vbo_layout(vertex_buffer_layout, num_elements_layout);
 
     vertices_vao_unbind();
     vertices_vbo_unbind();
+
+    vertices_vao_bind(vertex_array_id);
+
+    vertices_ebo_bind(ebo_id);
+
+    vertices_vao_unbind();
+    vertices_ebo_unbind();
+
     return vertex_array_id;
 }
 
